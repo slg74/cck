@@ -16,6 +16,7 @@
 #include <string.h>
 #include <time.h>
 #include <unistd.h>
+#include <signal.h>
 #include <getopt.h>
 
 #include <openssl/x509.h>
@@ -41,12 +42,14 @@
 /* ── defaults ─────────────────────────────────────────────────────── */
 #define DEFAULT_PORT        "443"
 #define DEFAULT_WARN_DAYS   30
+#define DEFAULT_TIMEOUT     10    /* seconds before giving up on a TLS connect */
 
 /* ── globals set by CLI flags ─────────────────────────────────────── */
 static int  g_warn_days  = DEFAULT_WARN_DAYS;
 static int  g_quiet      = 0;   /* -q: suppress OK lines              */
 static int  g_no_color   = 0;   /* --no-color                         */
 static int  g_verbose    = 0;   /* -v: extra cert details             */
+static int  g_timeout    = DEFAULT_TIMEOUT; /* -t: connect timeout, secs */
 
 /* ── helpers ──────────────────────────────────────────────────────── */
 
@@ -177,6 +180,21 @@ static CertStatus check_file(const char *path)
 
 /* ── live TLS check ───────────────────────────────────────────────── */
 
+/*
+ * SIGALRM handler — fires when g_timeout seconds elapse inside check_host().
+ * write() and _exit() are async-signal-safe; printf/fprintf are not.
+ *
+ * Security: without a timeout a hostile or slow peer can keep cck hung
+ * indefinitely, blocking any pipeline or monitoring script that calls it.
+ */
+static void handle_alarm(int sig)
+{
+    (void)sig;
+    static const char msg[] = "ERROR: connection timed out\n";
+    if (write(STDERR_FILENO, msg, sizeof(msg) - 1) < 0) { /* silence -Wunused-result */ }
+    _exit(EXIT_ERROR);
+}
+
 static CertStatus check_host(const char *host, const char *port)
 {
     char label[256];
@@ -189,7 +207,13 @@ static CertStatus check_host(const char *host, const char *port)
         return CERT_ERROR;
     }
 
-    /* Don't verify chain — we only want the cert itself */
+    /*
+     * SSL_VERIFY_NONE: intentional.  cck's purpose is to inspect whatever
+     * cert the server presents — including self-signed or already-expired
+     * ones — so we must not let verification abort the handshake.  We are
+     * not using this connection for any authenticated data transfer; we
+     * read the cert and immediately close.
+     */
     SSL_CTX_set_verify(ctx, SSL_VERIFY_NONE, NULL);
 
     /* Build address string for BIO */
@@ -205,33 +229,78 @@ static CertStatus check_host(const char *host, const char *port)
     }
     BIO_set_conn_hostname(bio, host);   /* for SNI via SSL layer */
 
+    /* FIX: check BIO_new_ssl return — NULL on OOM would cause a NULL deref
+     * on the BIO_get_ssl / SSL_set_tlsext_host_name / BIO_push calls below. */
     SSL *ssl = NULL;
     BIO *ssl_bio = BIO_new_ssl(ctx, 1);
+    if (!ssl_bio) {
+        fprintf(stderr, "%sERROR%s  %s — BIO_new_ssl failed\n",
+                c(RED), c(RESET), label);
+        BIO_free_all(bio);
+        SSL_CTX_free(ctx);
+        return CERT_ERROR;
+    }
+
     BIO_get_ssl(ssl_bio, &ssl);
+    /* FIX: validate ssl pointer before use — BIO_get_ssl can fail if the BIO
+     * is not an SSL BIO (should not happen here, but be explicit). */
+    if (!ssl) {
+        fprintf(stderr, "%sERROR%s  %s — BIO_get_ssl failed\n",
+                c(RED), c(RESET), label);
+        BIO_free_all(ssl_bio);
+        SSL_CTX_free(ctx);
+        return CERT_ERROR;
+    }
+
     SSL_set_tlsext_host_name(ssl, host);  /* SNI */
     ssl_bio = BIO_push(ssl_bio, bio);
 
+    /*
+     * FIX: arm a timeout before blocking network I/O.
+     * Without this, a slow or non-responsive peer keeps cck hung forever,
+     * which blocks any script or monitoring pipeline that invokes it.
+     * handle_alarm() calls _exit() — async-signal-safe — on expiry.
+     */
+    signal(SIGALRM, handle_alarm);
+    alarm((unsigned int)g_timeout);
+
     if (BIO_do_connect(ssl_bio) <= 0) {
+        alarm(0);
         fprintf(stderr, "%sERROR%s  %s — connection failed\n",
                 c(RED), c(RESET), label);
-        ERR_print_errors_fp(stderr);
+        /* FIX: gate OpenSSL error detail behind -v to avoid leaking internal
+         * state (memory addresses, cipher negotiation details) to untrusted
+         * output in automated / logged contexts. */
+        if (g_verbose) ERR_print_errors_fp(stderr);
+        else           ERR_clear_error();
         BIO_free_all(ssl_bio);
         SSL_CTX_free(ctx);
         return CERT_ERROR;
     }
 
     if (BIO_do_handshake(ssl_bio) <= 0) {
+        alarm(0);
         fprintf(stderr, "%sERROR%s  %s — TLS handshake failed\n",
                 c(RED), c(RESET), label);
-        ERR_print_errors_fp(stderr);
+        if (g_verbose) ERR_print_errors_fp(stderr);
+        else           ERR_clear_error();
         BIO_free_all(ssl_bio);
         SSL_CTX_free(ctx);
         return CERT_ERROR;
     }
 
-    /* Grab the server's certificate */
-    BIO_get_ssl(ssl_bio, &ssl);
-    X509 *cert = SSL_get_peer_certificate(ssl);
+    alarm(0);   /* connection + handshake done; cancel the alarm */
+
+    /*
+     * FIX: use SSL_get1_peer_certificate (the non-deprecated form since
+     * OpenSSL 3.0).  Both increment the ref-count; X509_free() below is
+     * required in either case.  The old name still works as an alias in 3.x
+     * but triggers -Wdeprecated-declarations with some build configs.
+     *
+     * FIX: the earlier BIO_get_ssl call already populated `ssl`; the
+     * redundant second BIO_get_ssl call that was here has been removed.
+     */
+    X509 *cert = SSL_get1_peer_certificate(ssl);
     if (!cert) {
         fprintf(stderr, "%sERROR%s  %s — no certificate presented\n",
                 c(RED), c(RESET), label);
@@ -270,6 +339,7 @@ static void usage(const char *prog)
         "  -H <host[:port]>   connect to host and check its TLS certificate\n"
         "                     (port defaults to 443)\n"
         "  -w <days>          warn if expiring within N days (default: %d)\n"
+        "  -t <secs>          TLS connect timeout in seconds (default: %d)\n"
         "  -q                 quiet mode — only show problems\n"
         "  -v                 verbose — show extra cert details\n"
         "  --no-color         disable ANSI color output\n"
@@ -286,6 +356,7 @@ static void usage(const char *prog)
         c(BOLD), c(RESET),
         prog, prog,
         DEFAULT_WARN_DAYS,
+        DEFAULT_TIMEOUT,
         prog, prog, prog, prog);
 }
 
@@ -298,9 +369,8 @@ int main(int argc, char *argv[])
         g_no_color = 1;
 
     /* ── option parsing ── */
-    int   opt;
-    int   host_mode  = 0;
-    char *port_override = NULL;
+    int opt;
+    int host_mode = 0;
 
     /* Support --no-color and --help as long options */
     static struct option long_opts[] = {
@@ -309,7 +379,13 @@ int main(int argc, char *argv[])
         {NULL, 0, NULL, 0}
     };
 
-    while ((opt = getopt_long(argc, argv, "H:w:qvh?", long_opts, NULL)) != -1) {
+    /*
+     * KNOWN LIMITATION: getopt stops at the first -H and hands off to the
+     * manual loop below.  Flags placed after the first -H (e.g.
+     * "cck -H host -w 14") are silently unrecognised and treated as
+     * additional targets.  Put all flags before the first -H or target path.
+     */
+    while ((opt = getopt_long(argc, argv, "H:w:t:qvh?", long_opts, NULL)) != -1) {
         switch (opt) {
         case 'H':
             host_mode = 1;
@@ -317,13 +393,28 @@ int main(int argc, char *argv[])
             /* We allow multiple -H flags so we re-parse; just set mode here */
             optind--;          /* push back so we handle in the loop below */
             goto done_opts;    /* break out of getopt loop */
-        case 'w':
-            g_warn_days = atoi(optarg);
-            if (g_warn_days < 0) {
-                fprintf(stderr, "cck: -w requires a non-negative integer\n");
+        case 'w': {
+            /* FIX: atoi() silently returns 0 for non-numeric input and for
+             * "0", giving no way to detect bad input.  Use strtol instead. */
+            char *end;
+            long v = strtol(optarg, &end, 10);
+            if (*end != '\0' || v < 0 || v > 36500) {
+                fprintf(stderr, "cck: -w requires an integer between 0 and 36500\n");
                 return EXIT_ERROR;
             }
+            g_warn_days = (int)v;
             break;
+        }
+        case 't': {
+            char *end;
+            long v = strtol(optarg, &end, 10);
+            if (*end != '\0' || v < 1 || v > 300) {
+                fprintf(stderr, "cck: -t requires an integer between 1 and 300\n");
+                return EXIT_ERROR;
+            }
+            g_timeout = (int)v;
+            break;
+        }
         case 'q':
             g_quiet = 1;
             break;
@@ -402,7 +493,7 @@ done_opts:;
                 }
             }
 
-            s = check_host(host_buf, port_override ? port_override : port);
+            s = check_host(host_buf, port);
         } else {
             s = check_file(arg);
         }
