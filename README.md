@@ -1,6 +1,6 @@
 # cck — SSL/TLS Certificate Checker
 
-A fast C utility that checks X.509 certificates for expiration and alerts you with the location and status of each cert.
+A fast C utility that checks X.509 certificates for expiration and alerts you with the location and status of each cert. A Rust port is available in [`cck-rs/`](cck-rs/).
 
 ## Features
 
@@ -212,6 +212,31 @@ python3 -m pytest datadog/tests/test_cck_ssl.py -v   # 27 unit tests
 ```
 
 See [datadog/README.md](datadog/README.md) for full config reference and a Terraform monitor example.
+
+## Rust Port ([`cck-rs/`](cck-rs/))
+
+A full port of the utility to Rust, motivated by the security review findings on the C version (see below). The Rust implementation is feature-identical — same flags, same output format, same exit codes — but several of the C vulnerabilities cannot occur in idiomatic Rust:
+
+| C finding | Why it can't happen in Rust |
+|---|---|
+| `BIO_new_ssl()` return unchecked → NULL deref | `Option<T>` / `Result<T, E>` make all fallible returns explicit; the compiler rejects unhandled cases |
+| `ssl` pointer used before NULL check | Same — pointer-returning FFI calls return `Option`; you pattern-match before use |
+| `atoi` silently accepts garbage | `str::parse::<i64>()` returns `Result`; invalid input is a compile-time-enforced error path |
+| `alarm()`/`SIGALRM` with async-signal-safety constraints | `TcpStream::connect_timeout` + `set_read_timeout` handle timeouts at the OS level — no signal handler needed |
+
+The C version has been hardened with explicit fixes for all of the above. The Rust port starts from a position where that class of mistake is structurally prevented.
+
+### Building the Rust port
+
+```sh
+cd cck-rs
+cargo build --release          # binary at target/release/cck
+cargo run --release -- --help
+```
+
+Requires Rust 1.70+ and system OpenSSL (same version used by the C build).
+
+---
 
 ## Security
 
