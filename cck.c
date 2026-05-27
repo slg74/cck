@@ -25,7 +25,7 @@
 #include <openssl/ssl.h>
 #include <openssl/bio.h>
 
-/* ── ANSI colours ─────────────────────────────────────────────────── */
+/* ── ANSI colors ─────────────────────────────────────────────────── */
 #define RED    "\033[1;31m"
 #define GREEN  "\033[1;32m"
 #define YELLOW "\033[1;33m"
@@ -272,7 +272,7 @@ static void usage(const char *prog)
         "  -w <days>          warn if expiring within N days (default: %d)\n"
         "  -q                 quiet mode — only show problems\n"
         "  -v                 verbose — show extra cert details\n"
-        "  --no-color         disable ANSI colour output\n"
+        "  --no-color         disable ANSI color output\n"
         "  --help             show this help\n\n"
         "Exit codes:\n"
         "  0  all certificates valid\n"
