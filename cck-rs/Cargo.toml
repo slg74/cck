@@ -1,0 +1,14 @@
+[package]
+name = "cck"
+version = "0.1.0"
+edition = "2021"
+rust-version = "1.70"
+description = "SSL/TLS certificate expiry checker"
+
+[dependencies]
+# OpenSSL bindings — TLS connections and X.509 cert parsing.
+# Uses the system OpenSSL (same library as the C build) so behaviour is identical.
+openssl = "0.10"
+
+# Date arithmetic and formatting (YYYY-MM-DD) from ASN.1 time offsets.
+chrono = { version = "0.4", default-features = false, features = ["clock", "std"] }

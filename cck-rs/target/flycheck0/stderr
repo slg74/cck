@@ -1,0 +1,42 @@
+   0.779147669s  INFO prepare_target{force=false package_id=cck v0.1.0 (/Users/scottghome/cck/cck-rs) target="cck"}: cargo::core::compiler::fingerprint: fingerprint dirty for cck v0.1.0 (/Users/scottghome/cck/cck-rs)/Check { test: false }/TargetInner { name: "cck", doc: true, ..: with_path("/Users/scottghome/cck/cck-rs/src/main.rs", Edition2021) }
+   0.779228454s  INFO prepare_target{force=false package_id=cck v0.1.0 (/Users/scottghome/cck/cck-rs) target="cck"}: cargo::core::compiler::fingerprint:     dirty: FsStatusOutdated(Stale)
+   0.780399726s  INFO prepare_target{force=false package_id=chrono v0.4.44 target="chrono"}: cargo::core::compiler::fingerprint: fingerprint dirty for chrono v0.4.44/Check { test: false }/TargetInner { ..: lib_target("chrono", ["lib"], "/Users/scottghome/.cargo/registry/src/index.crates.io-6f17d22bba15001f/chrono-0.4.44/src/lib.rs", Edition2021) }
+   0.780442897s  INFO prepare_target{force=false package_id=chrono v0.4.44 target="chrono"}: cargo::core::compiler::fingerprint:     dirty: FsStatusOutdated(Stale)
+   0.781689563s  INFO prepare_target{force=false package_id=iana-time-zone v0.1.65 target="iana_time_zone"}: cargo::core::compiler::fingerprint: fingerprint dirty for iana-time-zone v0.1.65/Check { test: false }/TargetInner { ..: lib_target("iana_time_zone", ["lib"], "/Users/scottghome/.cargo/registry/src/index.crates.io-6f17d22bba15001f/iana-time-zone-0.1.65/src/lib.rs", Edition2021) }
+   0.781720714s  INFO prepare_target{force=false package_id=iana-time-zone v0.1.65 target="iana_time_zone"}: cargo::core::compiler::fingerprint:     dirty: FsStatusOutdated(Stale)
+   0.782944049s  INFO prepare_target{force=false package_id=core-foundation-sys v0.8.7 target="core_foundation_sys"}: cargo::core::compiler::fingerprint: fingerprint dirty for core-foundation-sys v0.8.7/Check { test: false }/TargetInner { ..: lib_target("core_foundation_sys", ["lib"], "/Users/scottghome/.cargo/registry/src/index.crates.io-6f17d22bba15001f/core-foundation-sys-0.8.7/src/lib.rs", Edition2018) }
+   0.782975344s  INFO prepare_target{force=false package_id=core-foundation-sys v0.8.7 target="core_foundation_sys"}: cargo::core::compiler::fingerprint:     dirty: FsStatusOutdated(Stale)
+   0.783985806s  INFO prepare_target{force=false package_id=num-traits v0.2.19 target="num-traits"}: cargo::core::compiler::fingerprint: fingerprint dirty for num-traits v0.2.19/Check { test: false }/TargetInner { ..: lib_target("num-traits", ["lib"], "/Users/scottghome/.cargo/registry/src/index.crates.io-6f17d22bba15001f/num-traits-0.2.19/src/lib.rs", Edition2021) }
+   0.784014363s  INFO prepare_target{force=false package_id=num-traits v0.2.19 target="num-traits"}: cargo::core::compiler::fingerprint:     dirty: FsStatusOutdated(Stale)
+   0.786090678s  INFO prepare_target{force=false package_id=openssl v0.10.72 target="openssl"}: cargo::core::compiler::fingerprint: fingerprint dirty for openssl v0.10.72/Check { test: false }/TargetInner { ..: lib_target("openssl", ["lib"], "/Users/scottghome/.cargo/registry/src/index.crates.io-6f17d22bba15001f/openssl-0.10.72/src/lib.rs", Edition2021) }
+   0.786120519s  INFO prepare_target{force=false package_id=openssl v0.10.72 target="openssl"}: cargo::core::compiler::fingerprint:     dirty: FsStatusOutdated(Stale)
+   0.787401416s  INFO prepare_target{force=false package_id=bitflags v2.11.1 target="bitflags"}: cargo::core::compiler::fingerprint: fingerprint dirty for bitflags v2.11.1/Check { test: false }/TargetInner { ..: lib_target("bitflags", ["lib"], "/Users/scottghome/.cargo/registry/src/index.crates.io-6f17d22bba15001f/bitflags-2.11.1/src/lib.rs", Edition2021) }
+   0.787433382s  INFO prepare_target{force=false package_id=bitflags v2.11.1 target="bitflags"}: cargo::core::compiler::fingerprint:     dirty: FsStatusOutdated(Stale)
+   0.788339976s  INFO prepare_target{force=false package_id=cfg-if v1.0.4 target="cfg_if"}: cargo::core::compiler::fingerprint: fingerprint dirty for cfg-if v1.0.4/Check { test: false }/TargetInner { ..: lib_target("cfg_if", ["lib"], "/Users/scottghome/.cargo/registry/src/index.crates.io-6f17d22bba15001f/cfg-if-1.0.4/src/lib.rs", Edition2018) }
+   0.788368905s  INFO prepare_target{force=false package_id=cfg-if v1.0.4 target="cfg_if"}: cargo::core::compiler::fingerprint:     dirty: FsStatusOutdated(Stale)
+   0.789252144s  INFO prepare_target{force=false package_id=foreign-types v0.3.2 target="foreign-types"}: cargo::core::compiler::fingerprint: fingerprint dirty for foreign-types v0.3.2/Check { test: false }/TargetInner { ..: lib_target("foreign-types", ["lib"], "/Users/scottghome/.cargo/registry/src/index.crates.io-6f17d22bba15001f/foreign-types-0.3.2/src/lib.rs", Edition2015) }
+   0.789283727s  INFO prepare_target{force=false package_id=foreign-types v0.3.2 target="foreign-types"}: cargo::core::compiler::fingerprint:     dirty: FsStatusOutdated(Stale)
+   0.790269547s  INFO prepare_target{force=false package_id=foreign-types-shared v0.1.1 target="foreign-types-shared"}: cargo::core::compiler::fingerprint: fingerprint dirty for foreign-types-shared v0.1.1/Check { test: false }/TargetInner { ..: lib_target("foreign-types-shared", ["lib"], "/Users/scottghome/.cargo/registry/src/index.crates.io-6f17d22bba15001f/foreign-types-shared-0.1.1/src/lib.rs", Edition2015) }
+   0.790298747s  INFO prepare_target{force=false package_id=foreign-types-shared v0.1.1 target="foreign-types-shared"}: cargo::core::compiler::fingerprint:     dirty: FsStatusOutdated(Stale)
+   0.791310634s  INFO prepare_target{force=false package_id=libc v0.2.186 target="libc"}: cargo::core::compiler::fingerprint: fingerprint dirty for libc v0.2.186/Check { test: false }/TargetInner { ..: lib_target("libc", ["lib"], "/Users/scottghome/.cargo/registry/src/index.crates.io-6f17d22bba15001f/libc-0.2.186/src/lib.rs", Edition2021) }
+   0.791338864s  INFO prepare_target{force=false package_id=libc v0.2.186 target="libc"}: cargo::core::compiler::fingerprint:     dirty: FsStatusOutdated(Stale)
+   0.793303519s  INFO prepare_target{force=false package_id=once_cell v1.21.4 target="once_cell"}: cargo::core::compiler::fingerprint: fingerprint dirty for once_cell v1.21.4/Check { test: false }/TargetInner { ..: lib_target("once_cell", ["lib"], "/Users/scottghome/.cargo/registry/src/index.crates.io-6f17d22bba15001f/once_cell-1.21.4/src/lib.rs", Edition2021) }
+   0.793333423s  INFO prepare_target{force=false package_id=once_cell v1.21.4 target="once_cell"}: cargo::core::compiler::fingerprint:     dirty: FsStatusOutdated(Stale)
+   0.802253620s  INFO prepare_target{force=false package_id=openssl-sys v0.9.107 target="openssl_sys"}: cargo::core::compiler::fingerprint: fingerprint dirty for openssl-sys v0.9.107/Check { test: false }/TargetInner { ..: lib_target("openssl_sys", ["lib"], "/Users/scottghome/.cargo/registry/src/index.crates.io-6f17d22bba15001f/openssl-sys-0.9.107/src/lib.rs", Edition2021) }
+   0.802290214s  INFO prepare_target{force=false package_id=openssl-sys v0.9.107 target="openssl_sys"}: cargo::core::compiler::fingerprint:     dirty: FsStatusOutdated(Stale)
+   0.803327985s  INFO prepare_target{force=false package_id=cck v0.1.0 (/Users/scottghome/cck/cck-rs) target="cck"}: cargo::core::compiler::fingerprint: fingerprint dirty for cck v0.1.0 (/Users/scottghome/cck/cck-rs)/Check { test: true }/TargetInner { name: "cck", doc: true, ..: with_path("/Users/scottghome/cck/cck-rs/src/main.rs", Edition2021) }
+   0.803354422s  INFO prepare_target{force=false package_id=cck v0.1.0 (/Users/scottghome/cck/cck-rs) target="cck"}: cargo::core::compiler::fingerprint:     dirty: FsStatusOutdated(Stale)
+    Checking core-foundation-sys v0.8.7
+    Checking foreign-types-shared v0.1.1
+    Checking cfg-if v1.0.4
+    Checking once_cell v1.21.4
+    Checking bitflags v2.11.1
+    Checking libc v0.2.186
+    Checking num-traits v0.2.19
+    Checking foreign-types v0.3.2
+    Checking iana-time-zone v0.1.65
+    Checking openssl-sys v0.9.107
+    Checking chrono v0.4.44
+    Checking openssl v0.10.72
+    Checking cck v0.1.0 (/Users/scottghome/cck/cck-rs)
+    Finished `dev` profile [unoptimized + debuginfo] target(s) in 14.97s
