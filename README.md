@@ -1,15 +1,17 @@
 # cck — SSL/TLS Certificate Checker
 
-A fast, zero-dependency C utility that checks X.509 certificates for expiration and alerts you with the certificate's location and status.
+A fast C utility that checks X.509 certificates for expiration and alerts you with the location and status of each cert.
 
 ## Features
 
-- ✅ **File check** — inspect PEM files (including chains with multiple certs)
+- ✅ **File check** — inspect PEM files, including chains with multiple certs
 - 🌐 **Live check** — connect to a host and check its TLS certificate in real-time
 - 🔴 **Expired** — prints location and how many days ago it expired
 - 🟡 **Expiring soon** — warns if expiration is within a configurable threshold
 - 🟢 **OK** — confirms the cert is valid with its expiry date
 - Handles IPv6, custom ports, and SNI
+- Connect timeout (`-t`) prevents hung pipelines on slow or unreachable hosts
+- Integrates with **Nagios/Icinga** and **Datadog** — see [`nagios/`](nagios/) and [`datadog/`](datadog/)
 
 ## Requirements
 
@@ -95,6 +97,7 @@ Options:
   -H <host[:port]>   connect to host and check its TLS certificate
                      (port defaults to 443)
   -w <days>          warn if expiring within N days (default: 30)
+  -t <secs>          TLS connect timeout in seconds (default: 10)
   -q                 quiet mode — only show problems
   -v                 verbose — show extra cert details
   --no-color         disable ANSI colour output
@@ -209,3 +212,28 @@ python3 -m pytest datadog/tests/test_cck_ssl.py -v   # 27 unit tests
 ```
 
 See [datadog/README.md](datadog/README.md) for full config reference and a Terraform monitor example.
+
+## Security
+
+### First-pass review (completed)
+
+A security review of [cck.c](cck.c) was performed and the following issues were found and remediated:
+
+| Severity | Finding | Resolution |
+|---|---|---|
+| 🔴 High | `BIO_new_ssl()` return value not checked — NULL dereference crash on OOM | Added NULL guard before `BIO_get_ssl`, `SSL_set_tlsext_host_name`, and `BIO_push` |
+| 🔴 High | `ssl` pointer not validated after `BIO_get_ssl()` before SNI call | Explicit NULL check with early return added |
+| 🟠 Med | No connect/handshake timeout — cck hangs forever on a slow or hostile peer | Added `SIGALRM` handler + `alarm(g_timeout)` wrapping both `BIO_do_connect` and `BIO_do_handshake`; exposed as `-t <secs>` (default 10) |
+| 🟠 Med | `ERR_print_errors_fp(stderr)` dumped OpenSSL internals unconditionally on error | Gated behind `-v`; calls `ERR_clear_error()` otherwise |
+| 🟠 Med | `atoi` used on `-w` input — silently accepts garbage, no overflow protection | Replaced with `strtol` + bounds check (0–36500); invalid input is rejected with a message |
+| 🟡 Low | `SSL_get_peer_certificate` deprecated since OpenSSL 3.0 | Replaced with `SSL_get1_peer_certificate` |
+| 🟡 Low | Redundant second `BIO_get_ssl` call before cert retrieval | Removed; `ssl` was already valid from the first call |
+| 🟡 Low | `port_override` variable was always NULL — dead code | Removed |
+| 🟡 Low | `SSL_VERIFY_NONE` had no explanatory comment | Documented: intentional, cck must see certs that may be self-signed or expired, no data is sent over the connection |
+| ℹ️ Info | Flags placed after the first `-H` argument are silently ignored by the getopt pass | Documented in source with a `KNOWN LIMITATION` comment; put all flags before targets |
+
+### Design notes
+
+**`SSL_VERIFY_NONE`** — cck deliberately disables chain verification so it can inspect any cert a server presents, including self-signed certs and certs from private CAs not in the system trust store. The connection is read-only and immediately discarded after the cert is retrieved; no sensitive data is transmitted. If you add any feature that sends data over the connection, this setting must be revisited.
+
+**Signal safety** — the `SIGALRM` handler uses only `write(2)` and `_exit(2)`, both of which are listed as async-signal-safe in POSIX. `printf`/`fprintf` are not safe inside signal handlers and are not used there.
