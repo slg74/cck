@@ -1,0 +1,55 @@
+## datadog/conf.d/cck_ssl.d/conf.yaml
+## Configuration for the cck_ssl Datadog Agent check.
+##
+## Copy this file (with your edits) to:
+##   /etc/datadog-agent/conf.d/cck_ssl.d/conf.yaml
+## then restart the Agent:
+##   sudo systemctl restart datadog-agent  # Linux
+##   sudo launchctl stop com.datadoghq.agent && sudo launchctl start com.datadoghq.agent  # macOS
+
+init_config:
+  ## Global warning threshold — days before expiry to emit WARNING (default: 30)
+  # warn_days: 30
+
+  ## Global critical threshold — days before expiry to emit CRITICAL (default: 14)
+  # crit_days: 14
+
+  ## Connection timeout in seconds for live TLS checks (default: 10)
+  # timeout: 10
+
+
+instances:
+
+  ## ── Example 1: live TLS endpoint (default port 443) ─────────────────
+  - host: example.com
+    tags:
+      - service:web
+      - env:production
+
+  ## ── Example 2: live TLS on a custom port ─────────────────────────────
+  # - host: internal.example.com
+  #   port: 8443
+  #   tags:
+  #     - service:internal-api
+  #     - env:production
+
+  ## ── Example 3: local PEM certificate file ────────────────────────────
+  # - cert_path: /etc/ssl/certs/my-service.pem
+  #   tags:
+  #     - service:my-api
+  #     - env:production
+
+  ## ── Example 4: override thresholds per-instance ──────────────────────
+  ## Useful for certs that rotate more frequently, e.g. ACME/Let's Encrypt
+  # - host: letsencrypt-site.example.com
+  #   warn_days: 21
+  #   crit_days: 7
+  #   tags:
+  #     - service:letsencrypt
+  #     - env:production
+
+  ## ── Example 5: PEM chain (all certs in the file are checked) ─────────
+  # - cert_path: /etc/nginx/ssl/fullchain.pem
+  #   tags:
+  #     - service:nginx
+  #     - env:production
