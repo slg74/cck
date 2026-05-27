@@ -152,6 +152,8 @@ EXPIRED /etc/ssl/ancient.pem
          expired 2024-01-01 (365 days ago)
 ```
 
+![cck sample run](cck-rs-image.png)
+
 ## Cron Integration
 
 Check certs nightly and alert on problems:
