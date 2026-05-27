@@ -156,3 +156,56 @@ Check certs nightly and alert on problems:
 ```cron
 0 6 * * * /usr/local/bin/cck -q /etc/ssl/certs/*.pem || mail -s "CERT EXPIRED" admin@example.com
 ```
+
+## Monitoring Integrations
+
+### Nagios / Icinga ([`nagios/`](nagios/))
+
+A compiled C plugin that follows the Nagios plugin interface exactly:
+
+| Exit | State | Meaning |
+|---|---|---|
+| 0 | OK | Valid, not expiring soon |
+| 1 | WARNING | Expires within `-w` days |
+| 2 | CRITICAL | Expires within `-c` days, or already expired |
+| 3 | UNKNOWN | Connection / parse error |
+
+Output includes a single status line and `days_remaining` performance data for PNP4Nagios / Graphite:
+
+```
+SSL CERT OK - example.com:443 expires 2026-07-01 (in 35 days) | days_remaining=35;30;14;0;
+SSL CERT CRITICAL - example.com:443 certificate EXPIRED on 2025-01-01 (147 days ago) | days_remaining=-147;30;14;0;
+```
+
+```sh
+cd nagios && make && make install   # installs to /usr/local/nagios/libexec
+make test                           # 27 smoke tests
+```
+
+See [nagios/README.md](nagios/README.md) for command/service object definitions and full usage.
+
+---
+
+### Datadog ([`datadog/`](datadog/))
+
+A Python Datadog Agent check that reports:
+
+| What | Detail |
+|---|---|
+| `cck.ssl.days_remaining` | Gauge — days until expiry (negative when expired) |
+| `cck.ssl.cert` | Service check — OK / WARNING / CRITICAL / UNKNOWN |
+
+Supports `host:port` live checks and local PEM files (including chains). Warning and critical thresholds are configurable globally in `init_config` or overridden per instance — useful when mixing long-lived and short-lived (e.g. Let's Encrypt) certs.
+
+```sh
+# Install
+sudo cp datadog/checks.d/cck_ssl.py  /etc/datadog-agent/checks.d/
+sudo cp -r datadog/conf.d/cck_ssl.d  /etc/datadog-agent/conf.d/
+# edit /etc/datadog-agent/conf.d/cck_ssl.d/conf.yaml, then:
+sudo systemctl restart datadog-agent
+
+# Test (no Agent required)
+python3 -m pytest datadog/tests/test_cck_ssl.py -v   # 27 unit tests
+```
+
+See [datadog/README.md](datadog/README.md) for full config reference and a Terraform monitor example.
